@@ -266,7 +266,7 @@ details.kader>summary{cursor:pointer;min-height:46px;display:flex;flex-wrap:wrap
         <button type="button" class="btn" data-act="clearroster" id="kaderClear">Alle Spieler entfernen</button>
         <button type="button" class="btn" data-act="resetroster" id="kaderReset">Landshut-Kader laden</button>
       </div>
-      <p class="note">Die Positionen werden auf diesem Gerät dauerhaft gespeichert, getrennt vom Plan. Sie bleiben beim Neuladen, bei Planänderungen, beim Laden eines weitergegebenen Stands und bei „Landshut-Kader laden“ erhalten. Auf einem anderen Gerät oder Browser musst du sie einmal neu setzen oder den Stand per Text mitnehmen. Unter „Spielt auch“ wählst du, auf welchen Positionen ein Feldspieler spielen kann. Die Rotation berücksichtigt das nur beim Platz im Feld, die Spielzeit hat immer Vorrang. Mindestens 12 Feldspieler und 2 Torhüter, höchstens 30 Spieler. Name, Nummer, Rolle (Torwart, Stamm Feld 1 oder 2) und Kapitän änderst du direkt in der Liste. Wer entfernt wird, verschwindet aus allen Abschnitten. Der Kader steckt auch im Text unter „Stand weitergeben“.</p>
+      <p class="note">Beim ersten Öffnen startet jedes Gerät mit dem festen Standard-Kader (Spieler, Felder, Positionen). Eigene Änderungen daran speichert die Seite getrennt vom Plan auf diesem Gerät. Sie bleiben beim Neuladen, bei Planänderungen und beim Laden eines weitergegebenen Stands erhalten. „Landshut-Kader laden“ setzt alles auf den festen Standard zurück. Unter „Spielt auch“ wählst du, auf welchen Positionen ein Feldspieler spielen kann. Die Rotation berücksichtigt das nur beim Platz im Feld, die Spielzeit hat immer Vorrang. Mindestens 12 Feldspieler und 2 Torhüter, höchstens 30 Spieler. Name, Nummer, Rolle (Torwart, Stamm Feld 1 oder 2) und Kapitän änderst du direkt in der Liste. Wer entfernt wird, verschwindet aus allen Abschnitten. Der Kader steckt auch im Text unter „Stand weitergeben“.</p>
     </div>
   </details>
 
@@ -344,28 +344,29 @@ details.kader>summary{cursor:pointer;min-height:46px;display:flex;flex-wrap:wrap
 var POSS=['IV','LM','ZM','RM','ST'];
 function posCat(n){return n==='LV'||n==='RV'?'IV':(n==='ZDM'?'ZM':n);}
 var DEFAULT_TEAM='SpVgg Landshut U13';
+var ROSTER_VERSION=2;
 var DEFAULT_ROSTER=[
  {n:1,short:'Valentino',gk:true},
  {n:21,short:'Gabriel',gk:true},
  {n:25,short:'Georg',gk:true},
- {n:6,short:'Henry',home:1},
- {n:7,short:'Okan',home:1},
- {n:9,short:'Basti',home:1},
- {n:13,short:'Deyan',home:1},
- {n:14,short:'Johanna',home:1},
- {n:15,short:'Matthias',home:1},
- {n:17,short:'Jonas',home:1},
- {n:19,short:'Elias',home:1},
- {n:20,short:'Jakob L.',home:1},
- {n:2,short:'Bastian',home:2,cap:true},
- {n:4,short:'Paul',home:2},
- {n:5,short:'Noah',home:2},
- {n:8,short:'Lukas',home:2},
- {n:10,short:'Jakob E.',home:2},
- {n:11,short:'Nico',home:2},
- {n:12,short:'Arman',home:2},
- {n:16,short:'Jakob S.',home:2},
- {n:18,short:'Luca',home:2}
+ {n:6,short:'Henry',home:1,pos:['LM','ZM','RM']},
+ {n:7,short:'Okan',home:1,pos:['LM','RM','ST']},
+ {n:9,short:'Basti',home:1,pos:['IV','RM']},
+ {n:13,short:'Deyan',home:1,pos:['IV','LM']},
+ {n:14,short:'Johanna',home:1,pos:['IV','LM']},
+ {n:15,short:'Matthias',home:1,pos:['IV','LM','ZM','RM']},
+ {n:19,short:'Elias',home:1,pos:[]},
+ {n:20,short:'Jakob L.',home:1,pos:[]},
+ {n:8,short:'Lukas',home:1,pos:['IV','LM','ZM','RM']},
+ {n:17,short:'Jonas',home:2,pos:['LM','ZM','RM','ST']},
+ {n:2,short:'Bastian',home:2,pos:['IV','ZM']},
+ {n:4,short:'Paul',home:2,pos:['IV','ST']},
+ {n:5,short:'Noah',home:2,pos:['IV','LM','ZM','RM']},
+ {n:10,short:'Jakob E.',home:2,pos:['LM','ZM','RM','ST']},
+ {n:11,short:'Nico',home:2,pos:['LM','RM','ST']},
+ {n:12,short:'Arman',home:2,pos:['IV','ZM','ST']},
+ {n:16,short:'Jakob S.',home:2,pos:['IV','LM','RM','ST']},
+ {n:18,short:'Luca',home:2,pos:['LM','RM','ST']}
 ];
 var ROSTER=[],BY={};
 function cloneRoster(){return DEFAULT_ROSTER.map(function(p){return Object.assign({},p);});}
@@ -414,8 +415,9 @@ function load(){
   var st=loadState();
   try{
     var k=JSON.parse(localStorage.getItem(KSTORE));
-    if(k&&validRoster(k.roster))st.roster=k.roster;
-  }catch(e){}
+    if(k&&k.v===ROSTER_VERSION&&validRoster(k.roster))st.roster=k.roster;
+    else st.roster=cloneRoster();
+  }catch(e){st.roster=cloneRoster();}
   return st;
 }
 function loadState(){
@@ -428,7 +430,7 @@ function loadState(){
   }catch(e){}
   return blank();
 }
-function save(){try{localStorage.setItem(STORE,JSON.stringify(S));localStorage.setItem(KSTORE,JSON.stringify({roster:S.roster}));}catch(e){}}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(S));localStorage.setItem(KSTORE,JSON.stringify({v:ROSTER_VERSION,roster:S.roster}));}catch(e){}}
 
 var S=load();
 function syncRoster(){
@@ -1282,7 +1284,7 @@ document.addEventListener('click',function(e){
     else armConfirm('clearroster');
   }
   else if(a==='resetroster'){
-    if(confirmKey==='resetroster'){var oldR2=S.roster;S.roster=cloneRoster();keepPos(S.roster,oldR2);S.team=DEFAULT_TEAM;$('team').value=S.team;S.lineup=blank().lineup;syncRoster();buildPlan();S.seeded=true;confirmKey=null;sel=null;kmsg='Landshut-Kader mit Wechselplan geladen.';}
+    if(confirmKey==='resetroster'){S.roster=cloneRoster();S.team=DEFAULT_TEAM;$('team').value=S.team;S.lineup=blank().lineup;syncRoster();buildPlan();S.seeded=true;confirmKey=null;sel=null;kmsg='Landshut-Kader mit Wechselplan geladen.';}
     else armConfirm('resetroster');
   }
   else if(a==='startchip'){cycleStart(+t.dataset.id);}
